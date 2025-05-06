@@ -159,13 +159,9 @@
                                 </select>
                             </div>
                             <div class="mb-3" id="subjectsField" style="display: none;">
-                                <label for="subjects" class="form-label">Select Subjects</label>
-                                <select class="form-select" id="subjects" name="subjects" multiple>
-                                    {% for subject in subjects %}
-                                    <option value="{{ subject }}">{{ subject }}</option>
-                                    {% endfor %}
-                                </select>
-                                <small class="form-text text-muted">Hold Ctrl (Windows) or Command (Mac) to select multiple subjects. You must select at least one subject as a teacher.</small>
+                                <label for="subjects" class="form-label">Enter Subject</label>
+                                <input type="text" class="form-control" id="subjects" name="subjects" placeholder="Enter your subject">
+                                <small class="form-text text-muted">Enter the subject you will be teaching</small>
                             </div>
                             <button type="submit" class="btn btn-primary btn-modern w-100">
                                 <span class="material-icons align-middle">person_add</span> Sign Up
@@ -198,24 +194,10 @@
         // Toggle subjects field based on role
         document.getElementById('role').addEventListener('change', function() {
             const subjectsField = document.getElementById('subjectsField');
-            const subjectsSelect = document.getElementById('subjects');
             if (this.value === 'teacher') {
                 subjectsField.style.display = 'block';
-                subjectsSelect.setAttribute('required', 'required');
             } else {
                 subjectsField.style.display = 'none';
-                subjectsSelect.removeAttribute('required');
-            }
-        });
-
-        // Form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const role = document.getElementById('role').value;
-            const subjects = document.getElementById('subjects');
-            
-            if (role === 'teacher' && subjects.selectedOptions.length === 0) {
-                e.preventDefault();
-                alert('Please select at least one subject for teacher role.');
             }
         });
     </script>

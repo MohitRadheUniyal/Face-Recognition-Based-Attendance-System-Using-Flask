@@ -156,13 +156,12 @@ def signup():
         role = request.form['role']
         
         # Handle multiple subject selection for teachers
-        subjects = []
+        subjects = ''
         if role == 'teacher':
-            subjects = request.form.getlist('subjects')
+            subjects = request.form.get('subjects', '').strip()
             if not subjects:
-                flash('Please select at least one subject for teacher role.', 'danger')
+                flash('Please enter a subject for teacher role.', 'danger')
                 return redirect(url_for('signup'))
-            subjects = ','.join(subjects)
 
         # Restrict signup to admin and teacher roles
         if role not in ['admin', 'teacher']:
