@@ -154,7 +154,15 @@ def signup():
         name = request.form['name']
         user_id = request.form['user_id']
         role = request.form['role']
-        subjects = ','.join(request.form.getlist('subjects')) if role == 'teacher' else ''
+        
+        # Handle multiple subject selection for teachers
+        subjects = []
+        if role == 'teacher':
+            subjects = request.form.getlist('subjects')
+            if not subjects:
+                flash('Please select at least one subject for teacher role.', 'danger')
+                return redirect(url_for('signup'))
+            subjects = ','.join(subjects)
 
         # Restrict signup to admin and teacher roles
         if role not in ['admin', 'teacher']:
@@ -261,12 +269,13 @@ def teacher_dashboard():
         return redirect(url_for('logout'))
 
     selected_date = request.args.get('selected_date', datetoday)
-    # Set default subject to first assigned subject instead of 'All'
+    # Set default subject to first assigned subject
     subject = request.args.get('subject', teacher_subjects[0])
     
     # Ensure selected subject is one of teacher's subjects
     if subject not in teacher_subjects:
         subject = teacher_subjects[0]
+        flash('Invalid subject selected. Showing attendance for your first assigned subject.', 'warning')
     
     names, rolls, times, l, attendance = extract_attendance(selected_date, subject)
     # Filter attendance to only show selected subject
@@ -392,14 +401,28 @@ def download():
     if 'username' not in session or session['role'] not in ['teacher', 'admin']:
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('login'))
+    
     user = User.query.filter_by(username=session['username']).first()
     if not user:
         flash('User not found. Please log in again.', 'danger')
         session.pop('username', None)
         session.pop('role', None)
         return redirect(url_for('login'))
+
     selected_date = request.args.get('selected_date', datetoday)
     subject = request.args.get('subject', 'All')
+
+    # Check if the subject is assigned to the teacher
+    if user.role == 'teacher':
+        if not user.subjects:
+            flash('No subjects assigned to you. Please contact admin.', 'danger')
+            return redirect(url_for('teacher_dashboard'))
+        
+        teacher_subjects = [s.strip() for s in user.subjects.split(',')]
+        if subject != 'All' and subject not in teacher_subjects:
+            flash('You are not authorized to download attendance for this subject.', 'danger')
+            return redirect(url_for('teacher_dashboard'))
+
     file_path = f'Attendance/Attendance-{selected_date}.csv'
     try:
         df = pd.read_csv(file_path)
@@ -419,14 +442,28 @@ def download_excel():
     if 'username' not in session or session['role'] not in ['teacher', 'admin']:
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('login'))
+    
     user = User.query.filter_by(username=session['username']).first()
     if not user:
         flash('User not found. Please log in again.', 'danger')
         session.pop('username', None)
         session.pop('role', None)
         return redirect(url_for('login'))
+
     selected_date = request.args.get('selected_date', datetoday)
     subject = request.args.get('subject', 'All')
+
+    # Check if the subject is assigned to the teacher
+    if user.role == 'teacher':
+        if not user.subjects:
+            flash('No subjects assigned to you. Please contact admin.', 'danger')
+            return redirect(url_for('teacher_dashboard'))
+        
+        teacher_subjects = [s.strip() for s in user.subjects.split(',')]
+        if subject != 'All' and subject not in teacher_subjects:
+            flash('You are not authorized to download attendance for this subject.', 'danger')
+            return redirect(url_for('teacher_dashboard'))
+
     file_path = f'Attendance/Attendance-{selected_date}.csv'
     try:
         df = pd.read_csv(file_path)
@@ -448,27 +485,39 @@ def start():
     if 'username' not in session or session['role'] not in ['teacher', 'admin']:
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('login'))
+    
     user = User.query.filter_by(username=session['username']).first()
     if not user:
         flash('User not found. Please log in again.', 'danger')
         session.pop('username', None)
         session.pop('role', None)
         return redirect(url_for('login'))
+
     selected_date = request.args.get('selected_date', datetoday)
-    subject = request.args.get('subject', SUBJECTS[0])
+    subject = request.args.get('subject', '')
     att_type = request.args.get('type', 'Regular')
+    
     if att_type not in ['Regular', 'Evening']:
         att_type = 'Regular'
+
     # Check if the subject is assigned to the teacher
-    if user.role == 'teacher' and user.subjects:
-        teacher_subjects = user.subjects.split(',')
-        if subject not in teacher_subjects:
+    if user.role == 'teacher':
+        if not user.subjects:
+            flash('No subjects assigned to you. Please contact admin.', 'danger')
+            return redirect(url_for('teacher_dashboard'))
+        
+        teacher_subjects = [s.strip() for s in user.subjects.split(',')]
+        if not subject or subject not in teacher_subjects:
             flash('You are not authorized to mark attendance for this subject.', 'danger')
             return redirect(url_for('teacher_dashboard'))
-    names, rolls, times, l, attendance = extract_attendance(selected_date, subject)
+
+    # Check if face recognition model exists
     if 'face_recognition_model.pkl' not in os.listdir('static'):
         flash('No trained model found. Please add a new face to continue.', 'danger')
         return redirect(url_for('admin_dashboard'))
+
+    names, rolls, times, l, attendance = extract_attendance(selected_date, subject)
+    
     ret = True
     cap = cv2.VideoCapture(0)
     while ret:
