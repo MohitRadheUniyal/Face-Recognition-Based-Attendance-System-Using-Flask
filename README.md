@@ -81,4 +81,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Author
 
 - **Mohit Radhe Uniyal**
-  - GitHub: [@mohitradheuniyal](https://github.com/mohitradheuniyal)
+  - GitHub:https://github.com/MohitRadheUniyal/Face-Recognition-Based-Attendance-System-Using-Flask
