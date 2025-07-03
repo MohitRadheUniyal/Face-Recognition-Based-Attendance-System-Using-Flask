@@ -41,7 +41,8 @@ A modern attendance system that uses facial recognition technology to automate t
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/mohitradheuniyal/face-recognition-based-attendance-system.git
+git clone
+https://github.com/MohitRadheUniyal/Face-Recognition-Based-Attendance-System-Using-Flask
 ```
 
 2. Install required packages:
